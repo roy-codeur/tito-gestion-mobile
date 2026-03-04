@@ -1,6 +1,7 @@
 import 'package:get/route_manager.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:startkit_app/core/di/dependancy_injection.dart';
+import 'package:startkit_app/features/auth/presentation/register/bloc/register_bloc.dart';
 
 import 'app_routes.dart';
 
@@ -11,6 +12,7 @@ import 'package:startkit_app/features/auth/presentation/login/bloc/login_bloc.da
 import 'package:startkit_app/features/home/presentation/pages/home_page.dart';
 import 'package:startkit_app/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:startkit_app/features/splash/splash_page.dart';
+import 'package:startkit_app/features/auth/presentation/register/pages/register_page.dart';
 
 class AppPages {
   static const initial = AppRoutes.splash;
@@ -40,6 +42,13 @@ class AppPages {
       page: () => BlocProvider(
         create: (_) => sl<LoginBloc>(),
         child: const LoginPage(),
+      ),
+    ),
+    GetPage(
+      name: AppRoutes.register,
+      page: () => BlocProvider(
+        create: (_) => sl<RegisterBloc>(),
+        child: const RegisterPage(),
       ),
     ),
   ];
