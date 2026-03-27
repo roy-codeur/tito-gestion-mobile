@@ -1,68 +1,71 @@
-import 'package:get_it/get_it.dart';
-import 'package:startkit_app/core/network/network_bloc/network_cubit.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:get_it/get_it.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:startkit_app/core/network/network_bloc/network_cubit.dart';
 import 'package:startkit_app/core/network/network_info.dart';
-import 'package:startkit_app/features/auth/data/datasources/auth_local_data_source.dart';
-import 'package:startkit_app/features/auth/data/datasources/auth_remote_data_source.dart';
-import 'package:startkit_app/features/auth/data/repositories/auth_repository_impl.dart';
-import 'package:startkit_app/features/auth/domain/repositories/auth_repository.dart';
-import 'package:startkit_app/features/auth/domain/usecases/login.dart';
-import 'package:startkit_app/features/auth/presentation/login/bloc/login_bloc.dart';
+import 'package:startkit_app/data/dao/auth_dao.dart';
+import 'package:startkit_app/data/local/onboarding_storage.dart';
+import 'package:startkit_app/data/repositories/auth_repository.dart';
+import 'package:startkit_app/data/repositories/implementation/auth_repository.dart';
+import 'package:startkit_app/logic/cubits/auth/login_cubit.dart';
+import 'package:startkit_app/logic/cubits/home_cubit.dart';
+import 'package:startkit_app/logic/observables/auth_observable.dart';
 import '../api/api_client.dart';
 
 final sl = GetIt.instance;
 
 Future<void> initDependencies() async {
   // ---------------------------------------------------------------------------
-  // SUPABASE
-  // ---------------------------------------------------------------------------
-  // await Supabase.initialize(
-  //   url: AppConfig.supabaseUrl,
-  //   anonKey: AppConfig.supabaseAnonKey,
-  // );
-
-  // ---------------------------------------------------------------------------
-  // CONNECTIVITY + NETWORK CUBIT
+  // CONNECTIVITY + NETWORK
   // ---------------------------------------------------------------------------
   sl.registerLazySingleton<Connectivity>(() => Connectivity());
   sl.registerLazySingleton<ConnectionCubit>(
-      () => ConnectionCubit(sl<Connectivity>()));
+    () => ConnectionCubit(sl<Connectivity>()),
+  );
   sl.registerLazySingleton<NetworkInfo>(
-      () => NetworkInfoImpl(sl<ConnectionCubit>()));
+    () => NetworkInfoImpl(sl<ConnectionCubit>()),
+  );
+
+  // ---------------------------------------------------------------------------
+  // API CLIENT
+  // ---------------------------------------------------------------------------
+  sl.registerLazySingleton<DioClient>(() => DioClient.create());
 
   // ---------------------------------------------------------------------------
   // DATA SOURCES
   // ---------------------------------------------------------------------------
-  
-  sl.registerLazySingleton<DioClient>(() => DioClient.create());
-
-sl.registerLazySingleton<AuthRemoteDataSource>(
-  () => AuthRemoteDataSourceImpl(sl()),
-);
-;
+  // sl.registerLazySingleton<AuthLocalDataSource>(() => AuthLocalDataSource());
+  // sl.registerLazySingleton<AuthRemoteDataSource>(
+  //   () => AuthRemoteDataSourceImpl(sl<DioClient>()),
+  // );
 
   // ---------------------------------------------------------------------------
   // REPOSITORIES
   // ---------------------------------------------------------------------------
-  sl.registerLazySingleton<AuthLocalDataSource>(
-  () => AuthLocalDataSource(),
-);
+  sl.registerLazySingleton<AuthRepository>(() => ApiAuthRepository());
+
+  // ---------------------------------------------------------------------------
+  // STORAGE
+  // ---------------------------------------------------------------------------
+  // STORAGE
+sl.registerLazySingleton<GetStorage>(() => GetStorage());
+
+sl.registerLazySingleton<OnboardingStorage>(() => OnboardingStorage(sl<GetStorage>()));
+
   
-  sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(
-      local: sl<AuthLocalDataSource>(),
-      remote: sl<AuthRemoteDataSource>(),
-      networkInfo: sl<NetworkInfo>(),
-    ),
-  );
 
   // ---------------------------------------------------------------------------
-  // USE CASES
+  // BLOCS / CUBITS
+  // — registerFactory : nouvelle instance à chaque injection
+  //   → évite que l'état persiste entre les navigations
   // ---------------------------------------------------------------------------
-  sl.registerLazySingleton<Login>(() => Login(sl<AuthRepository>()));
+  sl.registerFactory<LoginCubit>(() => LoginCubit(sl<AuthRepository>()));
+  sl.registerFactory<HomeCubit>(() => HomeCubit());
 
   // ---------------------------------------------------------------------------
-  // BLOCS
+  // OBSERVABLE
   // ---------------------------------------------------------------------------
-  sl.registerFactory<LoginBloc>(() => LoginBloc(sl<Login>()));
+
+  sl.registerLazySingleton<AuthObservable>(() => AuthDao());
+ 
 }

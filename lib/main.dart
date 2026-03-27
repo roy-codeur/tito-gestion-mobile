@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:get/get_navigation/get_navigation.dart';
 import 'package:get/instance_manager.dart';
-import 'package:startkit_app/core/constants/app_config.dart';
-import 'package:startkit_app/core/di/dependancy_injection.dart';
-import 'package:startkit_app/core/network/network_bloc/network_cubit.dart';
-import 'package:startkit_app/core/routes/app_pages.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:get_storage/get_storage.dart';
+import 'core/constants/app_config.dart';
+import 'core/di/dependancy_injection.dart';
+import 'core/network/network_bloc/network_cubit.dart';
+import 'core/routes/app_pages.dart';
+import 'logic/cubits/home_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await initDependencies();
-
-  // Ajouter le Connectivity dans GetX si pas déjà fait
+ 
+  // GetX injections
   Get.put(Connectivity());
-
-  // Ajouter ConnectionCubit dans GetX
   Get.put(ConnectionCubit(Get.find<Connectivity>()));
 
   runApp(const RootApp());
@@ -27,8 +27,15 @@ class RootApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<ConnectionCubit>(
-      create: (_) => Get.find<ConnectionCubit>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<HomeCubit>(
+          create: (_) => HomeCubit(),
+        ),
+        BlocProvider<ConnectionCubit>(
+          create: (_) => Get.find<ConnectionCubit>(),
+        ),
+      ],
       child: BlocListener<ConnectionCubit, NetworkState>(
         listener: (context, state) {
           if (state is NetworkDisconnected) {
@@ -38,20 +45,16 @@ class RootApp extends StatelessWidget {
               snackPosition: SnackPosition.BOTTOM,
               backgroundColor: Colors.red.withOpacity(0.8),
               colorText: Colors.white,
-              margin: const EdgeInsets.all(12),
-              duration: const Duration(seconds: 3),
             );
           }
 
           if (state is NetworkConnected) {
             Get.snackbar(
               "Connexion rétablie",
-              "Votre appareil est de nouveau en ligne.",
+              "Connexion OK.",
               snackPosition: SnackPosition.BOTTOM,
               backgroundColor: Colors.green.withOpacity(0.8),
               colorText: Colors.white,
-              margin: const EdgeInsets.all(12),
-              duration: const Duration(seconds: 2),
             );
           }
         },
